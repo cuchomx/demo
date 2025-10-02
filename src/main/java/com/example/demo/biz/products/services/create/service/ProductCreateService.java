@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.utils.StringUtils;
 
 import java.util.Optional;
 
@@ -32,11 +31,11 @@ public class ProductCreateService implements IProductCreateService {
     public Optional<Integer> execute(String correlationId, ProductRequestDto request) {
 
         if (!ParameterValidationUtils.isValidParameterRequest(correlationId, request)) {
-            log.warn("ProductCreateService::create - Invalid correlationId or request provided");
+            log.warn("ProductCreateService::execute - Invalid correlationId or request provided");
             return Optional.empty();
         }
 
-        log.info("ProductCreateService::create - creating product: correlationId: {}, product: {}",
+        log.info("ProductCreateService::execute - creating product: correlationId: {}, product: {}",
                 correlationId,
                 request
         );
@@ -45,45 +44,43 @@ public class ProductCreateService implements IProductCreateService {
 
         try {
             QueueRequestCacheService.add(correlationId, IN_PROGRESS);
+            
             ProductEntity entity = productDataMapper.toEntity(request);
+            if (entity == null) {
+                log.warn("ProductCreateService::execute - Mapper returned null entity for correlationId: {}", correlationId);
+                QueueRequestCacheService.update(correlationId, ERROR);
+                return Optional.empty();
+            }
 
-            createdId = productCreateRepository
-                    .create(entity)
-                    .map(this::requireId);
+            createdId = productCreateRepository.create(entity);
 
-            createdId.ifPresentOrElse(id -> {
-                log.info("ProductCreateService::create - product created with id: {}", id);
-
-                String message = String.valueOf(id);
-                if (StringUtils.isBlank(message)) {
-                    throw new IllegalArgumentException("SQS message must not be null or blank");
+            if (createdId.isPresent()) {
+                Integer id = createdId.get();
+                if (id <= 0) {
+                    log.error("ProductCreateService::execute - Invalid created id returned: {}", id);
+                    QueueRequestCacheService.update(correlationId, ERROR);
+                    return Optional.empty();
                 }
 
-                log.info("ProductCreateService::create - publishing product creation event to queue: {}", message);
-                applicationEventPublisher.publishEvent(new ProductCreateProducerQueueEvent(this, correlationId, message));
+                log.info("ProductCreateService::execute - product created with id: {}", id);
+
+                applicationEventPublisher.publishEvent(
+                        new ProductCreateProducerQueueEvent(this, correlationId, String.valueOf(id))
+                );
 
                 QueueRequestCacheService.update(correlationId, COMPLETED);
-
-            }, () -> {
+            } else {
                 QueueRequestCacheService.update(correlationId, ERROR);
-                log.warn("ProductCreateService::create - product creation failed");
-            });
+                log.warn("ProductCreateService::execute - product creation failed (empty result)");
+            }
 
         } catch (Exception e) {
-            log.error("ProductCreateService::create - Error creating product: {}", e.getMessage(), e);
+            log.error("ProductCreateService::execute - Error creating product: {}", e.getMessage(), e);
             QueueRequestCacheService.update(correlationId, ERROR);
             throw e;
         }
 
         return createdId;
-    }
-
-    private Integer requireId(Integer id) {
-        if (id == null || id <= 0) {
-            log.error("Stored procedure returned invalid product id: {}", id);
-            return null;
-        }
-        return id;
     }
 
 }

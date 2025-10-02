@@ -1,5 +1,6 @@
 package com.example.demo.biz.products.services.create.queue.outbound.producer;
 
+import com.example.commons.utils.ParameterValidationUtils;
 import com.example.commons.utils.SendMessageQueueUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.utils.StringUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,8 +29,8 @@ public class ProductCreateQueueProducer implements IProductCreateQueueProducer {
 
     @PostConstruct
     void validateConfiguration() {
-        if (queueUrl == null || queueUrl.isBlank()) {
-            throw new IllegalStateException("aws.sqs.queue.create.url must be configured");
+        if (StringUtils.isBlank(queueUrl)) {
+            throw new IllegalStateException("aws.sqs.queue.create.service.producer.url must be configured");
         }
         try {
             var uri = new URI(queueUrl);
@@ -54,7 +56,16 @@ public class ProductCreateQueueProducer implements IProductCreateQueueProducer {
     @Override
     public void produce(String correlationId, String message) {
 
-        log.info("ProductCreateQueueProducer::consume - Producing message: {}", message);
+        if (!ParameterValidationUtils.isValidCorrelationIdValue(correlationId)) {
+            log.warn("ProductCreateQueueProducer::produce - Invalid correlationId provided");
+            throw new IllegalArgumentException("correlationId must not be null or blank");
+        }
+        if (StringUtils.isBlank(message)) {
+            log.warn("ProductCreateQueueProducer::produce - Invalid message provided");
+            throw new IllegalArgumentException("message must not be null or blank");
+        }
+
+        log.info("ProductCreateQueueProducer::consume - Producing correlationId: {}, message: {}", correlationId, message);
 
         try {
             var sendRequest = SendMessageQueueUtils.buildSendMessageRequest(queueUrl, correlationId, message);

@@ -1,5 +1,6 @@
 package com.example.demo.biz.products.services.create.queue.inbound.consumer;
 
+import com.example.commons.constants.RequestStatus;
 import com.example.commons.utils.ParameterValidationUtils;
 import com.example.commons.utils.QueueAttributeUtils;
 import com.example.commons.utils.ReceiveMessageQueueUtils;
@@ -34,14 +35,11 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
     @Value("${aws.sqs.queue.create.service.consumer.url}")
     private String queueUrl;
 
-    private static final int MAX_NUMBER_OF_MESSAGES = 10;
-    private static final int WAIT_TIME_SECONDS = 20;
-
     @PostConstruct
     void validateConfiguration() {
 
         if (StringUtils.isBlank(queueUrl)) {
-            throw new IllegalStateException("aws.sqs.queue.create.url must be configured");
+            throw new IllegalStateException("aws.sqs.queue.create.service.consumer.url must be configured");
         }
         try {
             var uri = new URI(queueUrl);
@@ -60,7 +58,14 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
         log.debug("ProductCreateQueueConsumer::consume - Polling SQS queue {}", queueUrl);
 
         ReceiveMessageRequest receiveRequest = ReceiveMessageQueueUtils.buildReceiveRequest(queueUrl, "All");
-        List<Message> messages = sqsClient.receiveMessage(receiveRequest).messages();
+
+        List<Message> messages;
+        try {
+            messages = sqsClient.receiveMessage(receiveRequest).messages();
+        } catch (RuntimeException ex) {
+            log.error("ProductCreateQueueConsumer::consume - Failed to receive messages. Error: {}", ex.getMessage(), ex);
+            return;
+        }
 
         if (messages == null || messages.isEmpty()) {
             log.debug("ProductCreateQueueConsumer::consume - No messages received");
@@ -68,11 +73,24 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
         }
 
         for (Message m : messages) {
-            QueueAttributeUtils.logMessageSummary(m);
+            try {
+                QueueAttributeUtils.logMessageSummary(m);
+            } catch (RuntimeException ex) {
+                log.warn("ProductCreateQueueConsumer::consume - Failed to log message summary for messageId={}. Error: {}", m.messageId(), ex.getMessage(), ex);
+            }
 
-            String correlationId = QueueAttributeUtils.extractCorrelationId(m);
+            String correlationId;
+            try {
+                correlationId = QueueAttributeUtils.extractCorrelationId(m);
+            } catch (RuntimeException ex) {
+                log.warn("ProductCreateQueueConsumer::consume - Failed to extract correlationId for messageId={}. Deleting. Error: {}",
+                        m.messageId(), ex.getMessage(), ex);
+                delete(m.receiptHandle());
+                continue;
+            }
+
             if (!ParameterValidationUtils.isValidCorrelationIdValue(correlationId)) {
-                log.warn("ProductCreateQueueConsumer::consume - Missing correlationId for messageId={}. correlationId:{}.", m.messageId(), correlationId);
+                log.warn("ProductCreateQueueConsumer::consume - Missing/invalid correlationId for messageId={}. Deleting.", m.messageId());
                 delete(m.receiptHandle());
                 continue;
             }
@@ -85,10 +103,14 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
                 continue;
             }
 
+            QueueRequestCacheService.add(correlationId, RequestStatus.IN_PROGRESS);
+
             try {
                 applicationEventPublisher.publishEvent(new ProductConsumerCreateQueueEvent(this, correlationId, m.body()));
+                QueueRequestCacheService.update(correlationId, RequestStatus.COMPLETED);
                 delete(m.receiptHandle());
             } catch (RuntimeException ex) {
+                QueueRequestCacheService.update(correlationId, RequestStatus.ERROR);
                 log.error("ProductCreateQueueConsumer::consume - Processing failed for messageId={} correlationId={}. Will NOT delete for retry. Error: {}",
                         m.messageId(), correlationId, ex.getMessage(), ex);
             }
@@ -107,9 +129,9 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
                     .receiptHandle(receiptHandle)
                     .build();
             sqsClient.deleteMessage(deleteRequest);
-            log.info("ProductCreateQueueConsumer::delete - Deleted message with receiptHandle={}", receiptHandle);
+            log.debug("ProductCreateQueueConsumer::delete - Deleted message");
         } catch (RuntimeException ex) {
-            log.error("ProductCreateQueueConsumer::safeDelete - Failed to delete message. Error: {}", ex.getMessage(), ex);
+            log.error("ProductCreateQueueConsumer::delete - Failed to delete message. Error: {}", ex.getMessage(), ex);
         }
     }
 
