@@ -1,0 +1,26 @@
+[
+  {
+    "id": "TASK_1",
+    "priority": "LOW",
+    "tags": [
+      "java"
+    ],
+    "title": "Update the id logic for product - create",
+    "description": "",
+    "status": "TODO",
+    "date": {
+      "date": {
+        "year": 2025,
+        "month": 9,
+        "day": 30
+      },
+      "time": {
+        "hour": 10,
+        "minute": 36,
+        "second": 17,
+        "nano": 911581000
+      }
+    },
+    "isImported": false
+  }
+]

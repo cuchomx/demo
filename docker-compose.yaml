@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  db-postgres-dev:
+    image: postgres:15
+    container_name: db-postgres-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sqs:
+    image: softwaremill/elasticmq
+    container_name: local-sqs
+    ports:
+      - "9324:9324" # Port for the SQS API
+      - "9325:9325" # Port for the ElasticMQ admin interface (optional)
+    environment:
+      - ELASTICMQ_NODE_ADDRESS=http://localhost:9324
+      - ELASTICMQ_REST_SQS=http://localhost:9324
+      - ELASTICMQ_SQS_ENDPOINT=http://localhost:9324
+      - ELASTICMQ_SQS_LISTEN_ADDRESS=0.0.0.0:9324
+      - ELASTICMQ_SQS_PORT=9324
+
+  # us-east-1
+
+volumes:
+  postgres_data:
