@@ -1,6 +1,6 @@
-package com.example.demo.biz.products.model.jpa.factory;
+package com.example.demo.biz.products.model.jdbc.factory;
 
-import com.example.demo.biz.products.model.jpa.entity.ProductEntity;
+import com.example.demo.biz.products.model.jdbc.entity.ProductEntity;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 

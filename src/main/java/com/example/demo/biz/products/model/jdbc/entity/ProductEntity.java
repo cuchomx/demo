@@ -1,4 +1,4 @@
-package com.example.demo.biz.products.model.jpa.entity;
+package com.example.demo.biz.products.model.jdbc.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

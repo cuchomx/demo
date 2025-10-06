@@ -61,6 +61,13 @@ public class ProductFindAllQueueProducer implements IProductFindAllQueueProducer
 
         try {
             var sendRequest = SendMessageQueueUtils.buildSendMessageRequest(queueUrl, correlationId, message);
+            log.info("ProductQueueFindAllQueueProducer::produce - Sending message to queue: {}, correlationId: {}, sendRequest: {}, messageBody: {}",
+                    sendRequest.queueUrl(),
+                    correlationId,
+                    sendRequest,
+                    sendRequest.messageBody()
+            );
+
             var response = sqsClient.sendMessage(sendRequest);
             log.info("ProductQueueFindAllQueueProducer::produce - Message sent successfully. queue:{}, correlationId:{}, messageId={}, sequenceNumber={}, message:{}",
                     queueUrl,

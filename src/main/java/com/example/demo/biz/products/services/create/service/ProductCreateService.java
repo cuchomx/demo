@@ -2,7 +2,7 @@ package com.example.demo.biz.products.services.create.service;
 
 import com.example.commons.dto.create.ProductRequestDto;
 import com.example.commons.utils.ParameterValidationUtils;
-import com.example.demo.biz.products.model.jpa.entity.ProductEntity;
+import com.example.demo.biz.products.model.jdbc.entity.ProductEntity;
 import com.example.demo.biz.products.model.mappers.IProductRequestDataMapper;
 import com.example.demo.biz.products.services.create.queue.outbound.events.ProductCreateProducerQueueEvent;
 import com.example.demo.biz.products.services.create.repository.IProductCreateRepository;
@@ -44,7 +44,7 @@ public class ProductCreateService implements IProductCreateService {
 
         try {
             QueueRequestCacheService.add(correlationId, IN_PROGRESS);
-            
+
             ProductEntity entity = productDataMapper.toEntity(request);
             if (entity == null) {
                 log.warn("ProductCreateService::execute - Mapper returned null entity for correlationId: {}", correlationId);

@@ -14,7 +14,7 @@ public enum FailedRequestCacheService {
 
     public static void add(FailedRequest failedRequest) {
         log.info("FailedRequestCacheService::add - Adding failed request to cache: {}", failedRequest);
-        failedRequests.add(failedRequest);
+        failedRequests.add(failedRequest);//300
     }
 
     private void updateQueue() {

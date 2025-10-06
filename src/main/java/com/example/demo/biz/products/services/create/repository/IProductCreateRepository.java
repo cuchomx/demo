@@ -1,6 +1,6 @@
 package com.example.demo.biz.products.services.create.repository;
 
-import com.example.demo.biz.products.model.jpa.entity.ProductEntity;
+import com.example.demo.biz.products.model.jdbc.entity.ProductEntity;
 
 import java.util.Optional;
 

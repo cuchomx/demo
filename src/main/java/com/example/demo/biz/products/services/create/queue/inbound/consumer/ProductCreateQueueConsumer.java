@@ -37,7 +37,6 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
 
     @PostConstruct
     void validateConfiguration() {
-
         if (StringUtils.isBlank(queueUrl)) {
             throw new IllegalStateException("aws.sqs.queue.create.service.consumer.url must be configured");
         }
@@ -55,7 +54,7 @@ public class ProductCreateQueueConsumer implements IProductCreateQueueConsumer {
     @Override
     public void consume() {
         log.debug("===========================================================================");
-        log.debug("ProductCreateQueueConsumer::consume - Polling SQS queue {}", queueUrl);
+        log.trace("ProductCreateQueueConsumer::consume - Polling SQS queue {}", queueUrl);
 
         ReceiveMessageRequest receiveRequest = ReceiveMessageQueueUtils.buildReceiveRequest(queueUrl, "All");
 

@@ -1,6 +1,6 @@
 package com.example.demo.biz.products.services.create.repository;
 
-import com.example.demo.biz.products.model.jpa.entity.ProductEntity;
+import com.example.demo.biz.products.model.jdbc.entity.ProductEntity;
 import com.example.demo.commons.exception.types.DatabaseOperationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

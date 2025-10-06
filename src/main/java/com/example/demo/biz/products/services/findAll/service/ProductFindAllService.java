@@ -2,7 +2,7 @@ package com.example.demo.biz.products.services.findAll.service;
 
 import com.example.commons.dto.create.ProductResponseDto;
 import com.example.commons.utils.ParameterValidationUtils;
-import com.example.demo.biz.products.model.jpa.entity.ProductEntity;
+import com.example.demo.biz.products.model.jdbc.entity.ProductEntity;
 import com.example.demo.biz.products.services.findAll.queue.outbound.events.ProductFindAllProducerQueueEvent;
 import com.example.demo.biz.products.services.findAll.repository.IProductFindAllRepository;
 import com.example.demo.commons.cache.QueueRequestCacheService;
@@ -54,7 +54,7 @@ public class ProductFindAllService implements IProductFindAllService {
             log.info("ProductFindAllService::execute - Found {} products", products.size());
 
             response = products.stream()
-                    .filter(Objects::nonNull)
+                    .filter(Objects::nonNull) // valid test
                     .map(this::toDto)
                     .collect(toList());
 

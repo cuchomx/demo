@@ -53,7 +53,7 @@ public class ProductFindAllQueueConsumer implements IProductFindAllQueueConsumer
     @Override
     public void consume() {
         log.info("===========================================================================");
-        log.debug("ProductFindAllQueueConsumer::consume - Polling SQS queue {}", queueUrl);
+        log.trace("ProductFindAllQueueConsumer::consume - Polling SQS queue {}", queueUrl);
 
         ReceiveMessageRequest receiveRequest = ReceiveMessageQueueUtils.buildReceiveRequest(queueUrl, "All");
         List<Message> messages = sqsClient.receiveMessage(receiveRequest).messages();
@@ -63,7 +63,9 @@ public class ProductFindAllQueueConsumer implements IProductFindAllQueueConsumer
             return;
         }
 
-        for (Message m : messages) {
+        log.info("ProductFindAllQueueConsumer::consume - {} messages received", messages.size());
+
+        for (Message m : messages) { //300 ya no esta en queue , estan aqui
 
             QueueAttributeUtils.logMessageSummary(m);
 
