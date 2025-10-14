@@ -1,0 +1,10 @@
+INSERT INTO products(name, description, price, quantity, category)
+VALUES ('Shoes', 'Good Shoes', 10, 1, 'Clothing');
+INSERT INTO products(name, description, price, quantity, category)
+VALUES ('Pant', 'Amazing Pant', 20, 2, 'Clothing');
+INSERT INTO products(name, description, price, quantity, category)
+VALUES ('Shirt', 'Amazing Shirt', 30, 3, 'Clothing');
+INSERT INTO products(name, description, price, quantity, category)
+VALUES ('Glasses', 'Amazing Glasses', 40, 4, 'Clothing');
+INSERT INTO products(name, description, price, quantity, category)
+VALUES ('Wallet', 'Amazing Wallet', 50, 5, 'Clothing');

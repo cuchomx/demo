@@ -35,6 +35,5 @@ services:
       - ELASTICMQ_SQS_PORT=9324
 
   # us-east-1
-
 volumes:
   postgres_data:
